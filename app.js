@@ -209,7 +209,7 @@ function bindEvents() {
       setActiveRealm(realm);
     });
   });
-  els.openCavemanBot.addEventListener("click", () => {
+  els.openCavemanBot?.addEventListener("click", () => {
     setActiveRealm("caveman");
   });
   els.runResearchSearch.addEventListener("click", async () => {
