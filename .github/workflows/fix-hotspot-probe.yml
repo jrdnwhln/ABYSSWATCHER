@@ -1,0 +1,39 @@
+name: Unblock hotspot data load
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unblock-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stop retired local probe from blocking data refresh
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app.js')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('  await probeOllama();\n  await refreshAllData();', '  void probeOllama();\n  await refreshAllData();')
+          path.write_text(text, encoding='utf-8')
+          if 'void probeOllama();' not in text:
+              raise SystemExit('probe unblock was not applied')
+          PY
+      - name: Validate JavaScript
+        run: node --check app.js
+      - name: Commit probe unblock
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add app.js
+            git commit -m "Unblock hotspot data refresh"
+            git push
+          fi
