@@ -1,0 +1,172 @@
+name: Refresh hotspot site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-hotspot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch site into research crypto radio hotspot
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          html_files = [root / name for name in ['index.html', 'crypto.html', 'research.html', 'radio.html']]
+          version_old = '20260410c'
+          version_new = '20260526a'
+
+          for path in html_files:
+              text = path.read_text(encoding='utf-8')
+              text = text.replace(version_old, version_new)
+              text = re.sub(r'\n\s*<a class="realm-tab" role="tab" data-realm-target="caveman"[^>]*>Caveman</a>', '', text)
+              text = re.sub(r'\n\s*<a id="openCavemanBot" class="ghost-button nav-link-button" href="\./caveman\.html">\s*Enter Caveman Cave\s*</a>', '', text, flags=re.S)
+              text = re.sub(r'NCBI health research, the caveman cave, and radio each get their own\s+space instead of piling into one crowded screen\.', 'live crypto, NCBI health research, and radio each get their own high-signal lane.', text)
+              text = re.sub(r'Market motion, publication records,\s+and radio controls all float inside the same abyss\.', 'Top coin movement, publication records, and radio controls all float inside the same abyss.', text)
+              text = text.replace('Choose a realm instead of digging through one huge page.', 'Crypto, research, and tunes in one live signal hub.')
+              text = text.replace('bitcoin, ethereum, solana...', 'injective-protocol, litecoin, ripple, hedera-hashgraph...')
+              text = text.replace('Abyss auto radio', 'Abyss Watchers Radio')
+              text = text.replace('Luhh Dyl mix', 'Custom song links')
+              text = text.replace('Paste a YouTube video or playlist link to start the station', 'Paste a YouTube video, playlist, or several song links')
+              text = text.replace('Pick a YouTube link or use a quick fill, then load the station.', 'Paste one song, a playlist, or multiple YouTube links, then load the station.')
+              path.write_text(text, encoding='utf-8')
+
+          Path('caveman.html').write_text('''<!doctype html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <meta http-equiv="refresh" content="0; url=./index.html" />
+              <title>Abyss Watchers | Redirecting</title>
+              <link rel="canonical" href="./index.html" />
+            </head>
+            <body>
+              <p>The Caveman page has been retired. Opening the Abyss Watchers research and crypto hotspot...</p>
+              <script>window.location.replace("./index.html");</script>
+            </body>
+          </html>
+          ''', encoding='utf-8')
+
+          app = Path('app.js')
+          text = app.read_text(encoding='utf-8')
+          if 'const DEFAULT_WATCHLIST =' not in text:
+              text = text.replace('const OLLAMA_FALLBACK_TAGS_ENDPOINT = "http://127.0.0.1:11434/api/tags";', 'const OLLAMA_FALLBACK_TAGS_ENDPOINT = "http://127.0.0.1:11434/api/tags";\nconst DEFAULT_WATCHLIST = ["injective-protocol", "litecoin", "ripple", "hedera-hashgraph"];\nconst LEGACY_DEFAULT_WATCHLIST = ["bitcoin", "ethereum", "solana"];')
+          text = text.replace('watchlist: ["bitcoin", "ethereum", "solana"],', 'watchlist: [...DEFAULT_WATCHLIST],')
+          text = text.replace('lastSearch: "Abyss auto radio"', 'lastSearch: "Abyss Watchers Radio"')
+          text = text.replace('name: "Abyss auto radio",', 'name: "Abyss Watchers Radio",')
+          text = text.replace('setStatus("Add a crypto asset slug like bitcoin, ethereum, or solana.");', 'setStatus("Add a crypto asset slug like injective-protocol, litecoin, ripple, or hedera-hashgraph.");')
+          text = text.replace('navigator.serviceWorker.register("./service-worker.js?v=20260410c")', 'navigator.serviceWorker.register("./service-worker.js?v=20260526a")')
+          text = text.replace('const allowedRealms = new Set(["portal", "crypto", "research", "caveman", "radio"]);', 'const allowedRealms = new Set(["portal", "crypto", "research", "radio"]);')
+          text = text.replace('watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [...DEFAULT_STATE.watchlist],', 'watchlist: normalizeWatchlist(raw.watchlist),')
+          if 'function normalizeWatchlist(value)' not in text:
+              text = text.replace('function parseYouTubeSource(input) {', '''function normalizeWatchlist(value) {
+            if (!Array.isArray(value) || !value.length) {
+              return [...DEFAULT_WATCHLIST];
+            }
+
+            const cleaned = value.map(sanitizeAsset).filter(Boolean);
+            const isLegacyDefault =
+              cleaned.length === LEGACY_DEFAULT_WATCHLIST.length &&
+              LEGACY_DEFAULT_WATCHLIST.every((asset) => cleaned.includes(asset));
+
+            return isLegacyDefault ? [...DEFAULT_WATCHLIST] : cleaned;
+          }
+
+          function parseYouTubeSource(input) {''')
+          text = text.replace('const trimmed = input.trim();\n\n  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {\n    return { kind: "video", id: trimmed };\n  }', '''const trimmed = input.trim();
+            const extractedVideos = extractYouTubeVideoIds(trimmed);
+            const extractedPlaylist = extractYouTubePlaylistId(trimmed);
+
+            if (extractedPlaylist) {
+              return { kind: "playlist", id: extractedPlaylist };
+            }
+
+            if (extractedVideos.length > 1) {
+              return { kind: "videoList", ids: extractedVideos };
+            }
+
+            if (extractedVideos.length === 1) {
+              return { kind: "video", id: extractedVideos[0] };
+            }
+
+            if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+              return { kind: "video", id: trimmed };
+            }''')
+          text = text.replace('els.radioPlayer.src =\n    source.kind === "playlist"\n      ? `https://www.youtube.com/embed?listType=playlist&list=${encodeURIComponent(source.id)}&${params.toString()}`\n      : `https://www.youtube.com/embed/${encodeURIComponent(source.id)}?${params.toString()}`;', '''if (source.kind === "playlist") {
+              els.radioPlayer.src = `https://www.youtube.com/embed?listType=playlist&list=${encodeURIComponent(source.id)}&${params.toString()}`;
+            } else if (source.kind === "videoList") {
+              const [leadVideoId, ...rest] = source.ids;
+              params.set("playlist", [leadVideoId, ...rest].join(","));
+              els.radioPlayer.src = `https://www.youtube.com/embed/${encodeURIComponent(leadVideoId)}?${params.toString()}`;
+            } else {
+              els.radioPlayer.src = `https://www.youtube.com/embed/${encodeURIComponent(source.id)}?${params.toString()}`;
+            }''')
+          text = text.replace('setRadioStatus("Paste a valid YouTube video or playlist link. Search pages do not embed directly.");', 'setRadioStatus("Paste a valid YouTube video, playlist, or multiple YouTube song links. Search pages do not embed directly.");')
+          if 'function extractYouTubeVideoIds(input)' not in text:
+              text = text.replace('function createDefaultCavemanState() {', '''function extractYouTubePlaylistId(input) {
+            const match = input.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : "";
+          }
+
+          function extractYouTubeVideoIds(input) {
+            const ids = new Set();
+            const patterns = [
+              /(?:youtube\\.com\\/watch\\?[^\\s]*?v=|youtu\\.be\\/|youtube\\.com\\/embed\\/|youtube\\.com\\/shorts\\/|youtube\\.com\\/live\\/)([a-zA-Z0-9_-]{11})/g,
+              /\\b([a-zA-Z0-9_-]{11})\\b/g
+            ];
+
+            patterns.forEach((pattern) => {
+              let match = pattern.exec(input);
+              while (match) {
+                ids.add(match[1]);
+                match = pattern.exec(input);
+              }
+            });
+
+            return [...ids];
+          }
+
+          function createDefaultCavemanState() {''')
+          app.write_text(text, encoding='utf-8')
+
+          css = Path('styles.css')
+          css_text = css.read_text(encoding='utf-8')
+          hide_rule = "\n\n[data-realm-pane='caveman'],\n.caveman-grid {\n  display: none !important;\n}\n"
+          if "[data-realm-pane='caveman']" not in css_text:
+              css_text += hide_rule
+          css.write_text(css_text, encoding='utf-8')
+
+          sw = Path('service-worker.js')
+          sw_text = sw.read_text(encoding='utf-8')
+          sw_text = sw_text.replace('abyss-watchers-shell-v3', 'abyss-watchers-shell-v5')
+          sw_text = sw_text.replace(version_old, version_new)
+          sw_text = sw_text.replace('  "./caveman.html",\n', '')
+          sw_text = sw_text.replace('  "./assets/caveman.webp",\n', '')
+          sw.write_text(sw_text, encoding='utf-8')
+
+          manifest = Path('manifest.json')
+          manifest_text = manifest.read_text(encoding='utf-8')
+          manifest_text = manifest_text.replace('A local-first signal hub for crypto market data, recent research records, and an optional opt-in radio.', 'A live research and crypto hotspot with market data, NCBI research records, and an opt-in radio station.')
+          manifest.write_text(manifest_text, encoding='utf-8')
+          PY
+      - name: Validate JavaScript
+        run: node --check app.js
+      - name: Commit hotspot update
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add index.html crypto.html research.html radio.html caveman.html app.js styles.css manifest.json service-worker.js
+            git commit -m "Refocus site on crypto research and radio"
+            git push
+          fi
