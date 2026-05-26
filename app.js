@@ -148,7 +148,7 @@ async function initialize() {
   bindEvents();
   bindSceneMotion();
   showRadioWelcome();
-  await probeOllama();
+  void probeOllama();
   await refreshAllData();
 
   if ("serviceWorker" in navigator) {
