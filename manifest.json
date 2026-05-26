@@ -1,7 +1,7 @@
 {
   "name": "Abyss Watchers Signal Mesh",
   "short_name": "AbyssMesh",
-  "description": "A local-first signal hub for crypto market data, recent research records, and an optional opt-in radio.",
+  "description": "A live research and crypto hotspot with market data, NCBI research records, and an opt-in radio station.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#08111f",

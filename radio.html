@@ -9,14 +9,14 @@
     />
     <meta name="theme-color" content="#08111f" />
     <title>Abyss Watchers | Radio Realm</title>
-    <link rel="manifest" href="./manifest.json?v=20260410c" />
+    <link rel="manifest" href="./manifest.json?v=20260526a" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260410c" />
+    <link rel="stylesheet" href="./styles.css?v=20260526a" />
   </head>
   <body data-default-realm="radio">
     <div id="abyssStage" class="abyss-stage" aria-hidden="true">
@@ -83,14 +83,13 @@
           <div class="site-brand-copy">
             <p class="eyebrow">Abyss Watchers</p>
             <h1 class="site-title">Signal Mesh Portal</h1>
-            <p class="subtle-copy">Choose a realm instead of digging through one huge page.</p>
+            <p class="subtle-copy">Crypto, research, and tunes in one live signal hub.</p>
           </div>
         </div>
         <div class="realm-nav" role="tablist" aria-label="Website realms">
           <a class="realm-tab" role="tab" data-realm-target="portal" aria-selected="true" href="./index.html">Portal</a>
           <a class="realm-tab" role="tab" data-realm-target="crypto" aria-selected="false" href="./crypto.html">Crypto</a>
           <a class="realm-tab" role="tab" data-realm-target="research" aria-selected="false" href="./research.html">Research</a>
-          <a class="realm-tab" role="tab" data-realm-target="caveman" aria-selected="false" href="./caveman.html">Caveman</a>
           <a class="realm-tab" role="tab" data-realm-target="radio" aria-selected="false" href="./radio.html">Radio</a>
         </div>
       </header>
@@ -100,16 +99,12 @@
           <h2 class="hero-title">Track the chain. Read the lab. Drift through the abyss.</h2>
           <p class="hero-text">
             Abyss Watchers now splits the experience into separate realms so crypto,
-            NCBI health research, the caveman cave, and radio each get their own
-            space instead of piling into one crowded screen.
+            live crypto, NCBI health research, and radio each get their own high-signal lane.
           </p>
           <div class="hero-actions">
             <button id="refreshAll" class="primary-button" type="button">Refresh Mesh</button>
                 <a class="ghost-button nav-link-button" href="./crypto.html">Open Crypto Realm</a>
                 <a class="ghost-button nav-link-button" href="./research.html">Open Research Realm</a>
-            <a id="openCavemanBot" class="ghost-button nav-link-button" href="./caveman.html">
-              Enter Caveman Cave
-            </a>
             <a class="ghost-button nav-link-button" href="./radio.html">Open Radio Realm</a>
             <button id="sharePack" class="ghost-button" type="button">Export Signal Pack</button>
             <label class="ghost-button import-button">
@@ -132,8 +127,7 @@
             <div class="hero-art-copy">
               <p class="panel-label">Portal Feed</p>
               <p class="hero-art-text">
-                The signal field bends as you move. Market motion, publication records,
-                and radio controls all float inside the same abyss.
+                The signal field bends as you move. Top coin movement, publication records, and radio controls all float inside the same abyss.
               </p>
             </div>
           </div>
@@ -230,7 +224,7 @@
                 <input
                   id="assetInput"
                   type="text"
-                  placeholder="bitcoin, ethereum, solana..."
+                  placeholder="injective-protocol, litecoin, ripple, hedera-hashgraph..."
                 />
                 <button id="addAsset" type="button">Add Asset</button>
               </div>
@@ -552,10 +546,10 @@
               <div class="control-group">
                 <p>Quick fills</p>
                 <div class="chip-row">
-                  <button class="topic-chip" type="button" data-radio-fill="Abyss auto radio">
+                  <button class="topic-chip" type="button" data-radio-fill="Abyss Watchers Radio">
                     Default Station
                   </button>
-                  <button class="topic-chip" type="button" data-radio-fill="Luhh Dyl mix">
+                  <button class="topic-chip" type="button" data-radio-fill="Custom song links">
                     Luhh Dyl
                   </button>
                 </div>
@@ -567,7 +561,7 @@
                   <input
                     id="radioInput"
                     type="text"
-                    placeholder="Paste a YouTube video or playlist link to start the station"
+                    placeholder="Paste a YouTube video, playlist, or several song links"
                   />
                   <button id="loadRadio" type="button">Load Station</button>
                 </div>
@@ -583,7 +577,7 @@
               </div>
 
               <p id="radioStatus" class="status-message">
-                Pick a YouTube link or use a quick fill, then load the station.
+                Paste one song, a playlist, or multiple YouTube links, then load the station.
               </p>
 
               <div id="radioPlayerShell" class="radio-player-shell hidden">
@@ -652,6 +646,6 @@
       </section>
     </aside>
 
-    <script src="./app.js?v=20260410c" defer></script>
+    <script src="./app.js?v=20260526a" defer></script>
   </body>
 </html>

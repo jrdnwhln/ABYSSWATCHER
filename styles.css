@@ -1478,3 +1478,9 @@ th {
     transform: none;
   }
 }
+
+
+[data-realm-pane='caveman'],
+.caveman-grid {
+  display: none !important;
+}

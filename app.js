@@ -6,6 +6,8 @@ const OLLAMA_MODEL = "gemma3:4b";
 const PAGE_DEFAULT_REALM = document.body.dataset.defaultRealm || "portal";
 const OLLAMA_FALLBACK_ENDPOINT = "http://127.0.0.1:11434/api/generate";
 const OLLAMA_FALLBACK_TAGS_ENDPOINT = "http://127.0.0.1:11434/api/tags";
+const DEFAULT_WATCHLIST = ["injective-protocol", "litecoin", "ripple", "hedera-hashgraph"];
+const LEGACY_DEFAULT_WATCHLIST = ["bitcoin", "ethereum", "solana"];
 const DEFAULT_CAVEMAN_TRANSCRIPT = [
   {
     role: "bot",
@@ -23,14 +25,14 @@ const DEFAULT_STATE = {
   activeCryptoTab: "board",
   activeResearchTab: "latest",
   activeCavemanTab: "chat",
-  watchlist: ["bitcoin", "ethereum", "solana"],
+  watchlist: [...DEFAULT_WATCHLIST],
   notes: "",
   customQuery: "",
   radio: {
     decision: "unset",
     enabled: false,
     lastInput: "",
-    lastSearch: "Abyss auto radio"
+    lastSearch: "Abyss Watchers Radio"
   },
   caveman: createDefaultCavemanState(),
   helper: createDefaultHelperState()
@@ -55,7 +57,7 @@ const HEALTH_TOPIC_SCOPES = {
 };
 
 const DEFAULT_RADIO_STATION = {
-  name: "Abyss auto radio",
+  name: "Abyss Watchers Radio",
   kind: "playlist",
   playlistId: "RDMMIVpJZVzGi-8",
   leadVideoId: "IVpJZVzGi-8"
@@ -150,7 +152,7 @@ async function initialize() {
   await refreshAllData();
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js?v=20260410c").catch(() => {
+    navigator.serviceWorker.register("./service-worker.js?v=20260526a").catch(() => {
       setStatus("Offline shell unavailable, but the node is still running locally.");
     });
   }
@@ -218,7 +220,7 @@ function bindEvents() {
   els.addAsset.addEventListener("click", async () => {
     const asset = sanitizeAsset(els.assetInput.value);
     if (!asset) {
-      setStatus("Add a crypto asset slug like bitcoin, ethereum, or solana.");
+      setStatus("Add a crypto asset slug like injective-protocol, litecoin, ripple, or hedera-hashgraph.");
       return;
     }
 
@@ -1326,12 +1328,12 @@ function readSnapshot(key, fallback = []) {
 function normalizeState(raw = {}, forcedRealm = PAGE_DEFAULT_REALM) {
   const defaultCaveman = createDefaultCavemanState();
   const defaultHelper = createDefaultHelperState();
-  const allowedRealms = new Set(["portal", "crypto", "research", "caveman", "radio"]);
+  const allowedRealms = new Set(["portal", "crypto", "research", "radio"]);
   return {
     ...DEFAULT_STATE,
     ...raw,
     activeRealm: allowedRealms.has(forcedRealm) ? forcedRealm : DEFAULT_STATE.activeRealm,
-    watchlist: Array.isArray(raw.watchlist) ? raw.watchlist : [...DEFAULT_STATE.watchlist],
+    watchlist: normalizeWatchlist(raw.watchlist),
     radio: {
       ...DEFAULT_STATE.radio,
       ...(raw.radio ?? {})
@@ -1582,7 +1584,7 @@ function loadRadioFromInput(input, autoplay) {
 
   const source = parseYouTubeSource(input);
   if (!source) {
-    setRadioStatus("Paste a valid YouTube video or playlist link. Search pages do not embed directly.");
+    setRadioStatus("Paste a valid YouTube video, playlist, or multiple YouTube song links. Search pages do not embed directly.");
     return;
   }
 
@@ -1593,10 +1595,15 @@ function loadRadioFromInput(input, autoplay) {
     rel: "0"
   });
 
-  els.radioPlayer.src =
-    source.kind === "playlist"
-      ? `https://www.youtube.com/embed?listType=playlist&list=${encodeURIComponent(source.id)}&${params.toString()}`
-      : `https://www.youtube.com/embed/${encodeURIComponent(source.id)}?${params.toString()}`;
+  if (source.kind === "playlist") {
+    els.radioPlayer.src = `https://www.youtube.com/embed?listType=playlist&list=${encodeURIComponent(source.id)}&${params.toString()}`;
+  } else if (source.kind === "videoList") {
+    const [leadVideoId, ...rest] = source.ids;
+    params.set("playlist", [leadVideoId, ...rest].join(","));
+    els.radioPlayer.src = `https://www.youtube.com/embed/${encodeURIComponent(leadVideoId)}?${params.toString()}`;
+  } else {
+    els.radioPlayer.src = `https://www.youtube.com/embed/${encodeURIComponent(source.id)}?${params.toString()}`;
+  }
   els.radioPlayerShell.classList.remove("hidden");
   setRadioStatus(
     autoplay
@@ -1802,12 +1809,39 @@ function bufferToHex(buffer) {
     .join("");
 }
 
+function normalizeWatchlist(value) {
+  if (!Array.isArray(value) || !value.length) {
+    return [...DEFAULT_WATCHLIST];
+  }
+
+  const cleaned = value.map(sanitizeAsset).filter(Boolean);
+  const isLegacyDefault =
+    cleaned.length === LEGACY_DEFAULT_WATCHLIST.length &&
+    LEGACY_DEFAULT_WATCHLIST.every((asset) => cleaned.includes(asset));
+
+  return isLegacyDefault ? [...DEFAULT_WATCHLIST] : cleaned;
+}
+
 function parseYouTubeSource(input) {
   if (!input) {
     return null;
   }
 
   const trimmed = input.trim();
+  const extractedVideos = extractYouTubeVideoIds(trimmed);
+  const extractedPlaylist = extractYouTubePlaylistId(trimmed);
+
+  if (extractedPlaylist) {
+    return { kind: "playlist", id: extractedPlaylist };
+  }
+
+  if (extractedVideos.length > 1) {
+    return { kind: "videoList", ids: extractedVideos };
+  }
+
+  if (extractedVideos.length === 1) {
+    return { kind: "video", id: extractedVideos[0] };
+  }
 
   if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
     return { kind: "video", id: trimmed };
@@ -1843,6 +1877,29 @@ function parseYouTubeSource(input) {
   }
 
   return null;
+}
+
+function extractYouTubePlaylistId(input) {
+  const match = input.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : "";
+}
+
+function extractYouTubeVideoIds(input) {
+  const ids = new Set();
+  const patterns = [
+    /(?:youtube\.com\/watch\?[^\s]*?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/g,
+    /\b([a-zA-Z0-9_-]{11})\b/g
+  ];
+
+  patterns.forEach((pattern) => {
+    let match = pattern.exec(input);
+    while (match) {
+      ids.add(match[1]);
+      match = pattern.exec(input);
+    }
+  });
+
+  return [...ids];
 }
 
 function createDefaultCavemanState() {

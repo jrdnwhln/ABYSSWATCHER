@@ -1,20 +1,18 @@
-const CACHE_NAME = "abyss-watchers-shell-v3";
+const CACHE_NAME = "abyss-watchers-shell-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./index.html?v=20260410c",
+  "./index.html?v=20260526a",
   "./crypto.html",
   "./research.html",
-  "./caveman.html",
   "./radio.html",
   "./styles.css",
-  "./styles.css?v=20260410c",
+  "./styles.css?v=20260526a",
   "./app.js",
-  "./app.js?v=20260410c",
+  "./app.js?v=20260526a",
   "./manifest.json",
-  "./manifest.json?v=20260410c",
+  "./manifest.json?v=20260526a",
   "./assets/abyss-watchers-logo.PNG",
-  "./assets/caveman.webp",
   "./assets/luna.jpeg"
 ];
 
